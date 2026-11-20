@@ -56,6 +56,34 @@ from .warehouse import (
     Warehouse,
     WarehouseError,
 )
+from .partial_order import OrderEvent, PartialOrder, PartialOrderError
+from .event_archive import (
+    ArchiveError,
+    EDGE_HANDOFF,
+    EDGE_INTERVAL,
+    EDGE_STATION,
+    EventArchive,
+    EventOrderReport,
+    EvidenceCycle,
+    KIND_OP,
+    KIND_TRAILER,
+    KIND_WEIGH,
+    TrailerMismatch,
+)
+from .permit_replay import (
+    MAX_CAPACITY,
+    MAX_EVENTS,
+    MAX_TOKEN_TYPES,
+    PermitError,
+    PermitReplay,
+    PermitReplayEngine,
+    PermitRule,
+    PermitScheme,
+    TokenType,
+    Witness,
+    WitnessStep,
+    replay_permits,
+)
 
 __all__ = [
     "Action", "Catalog", "CatalogError", "LimitError", "MassRange", "MAX_ENTITIES",
@@ -69,4 +97,13 @@ __all__ = [
     "REASON_MASS_INTERVAL_CONFLICT", "REASON_TIME_ORDER", "REASON_ROLE_MISMATCH",
     "REASON_TRACTOR_MISMATCH", "REASON_NO_PRODUCT",
     "STATUS_DRAFT", "STATUS_CONFIRMED", "STATUS_REVIEW", "STATUS_SUPERSEDED",
+    # 事件偏序 / 事件档案
+    "OrderEvent", "PartialOrder", "PartialOrderError",
+    "EventArchive", "EventOrderReport", "ArchiveError", "EvidenceCycle",
+    "TrailerMismatch", "EDGE_STATION", "EDGE_HANDOFF", "EDGE_INTERVAL",
+    "KIND_WEIGH", "KIND_TRAILER", "KIND_OP",
+    # 许可回放
+    "PermitScheme", "PermitReplayEngine", "PermitReplay", "PermitRule",
+    "TokenType", "Witness", "WitnessStep", "PermitError", "replay_permits",
+    "MAX_EVENTS", "MAX_TOKEN_TYPES", "MAX_CAPACITY",
 ]

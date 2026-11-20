@@ -15,9 +15,11 @@
 ## 快速开始
 
 ```bash
-python3 -m unittest discover -s tests -v     # 46 个测试
+python3 -m unittest discover -s tests -v     # 75 个测试
 python3 -m demo.run_demo                     # 合成案例
+python3 -m demo.run_ordering                 # 事件偏序 / 许可回放案例
 python3 -m demo.run_demo --json              # 另写 demo/out/*.json
+python3 -m demo.run_ordering --json          # 另写 demo/out/ordering_*.json
 ```
 
 ```python
@@ -125,24 +127,120 @@ w.evaluation_history(re.trip_id)  # 旧（CONFIRMED）与新（REVIEW）都在�
 目录 100 实体（`define_mass` 时强制）；仓库 1000 张票、200 次运输。同一车同一秒
 可有多张不同 `ticket_id` 的票。
 
+## 站务事件档案 (业务入口一) 与班组许可回放 (业务入口二)
+
+两个可独立调用的入口构建在同一份、不含业务语义的 **事件偏序**
+(`weighbridge/partial_order.py`) 之上：
+
+* `PartialOrder(events, edges)`：校验重名 / 悬空边 / 环，可给确定的拓扑序与
+  传递闭包；`events` 为 `(event_id, action)`，`edges` 为 “必须先于”。
+
+### 事件档案 `EventArchive`
+
+为一次运输登记事件（编号 / 动作 / 来源站 / 该站严格递增的本地序号 /
+`[lo,hi]` 业务时间区间）。先后关系 **只** 来自三处，绝不来自录入顺序：
+
+1. 同一站按 `local_seq`（同站重号直接拒绝）；
+2. 显式交接 `add_handoff(before, after)`；
+3. 一条区间上端 **严格小于** 另一条下端（相接 / 重叠都不算）。
+
+```python
+from weighbridge import EventArchive, EvidenceCycle, TrailerMismatch
+
+a = EventArchive()
+a.add_trip("TRIP-1")
+a.add_ticket("TRIP-1", role="IN",  ticket_id="K-IN",  tractor="T1",
+             trailer="R1", catalog_seq=1, ts=1000, gross=9000)
+a.add_ticket("TRIP-1", role="OUT", ticket_id="K-OUT", tractor="T1",
+             trailer="R2", catalog_seq=3, ts=1400, gross=12800)
+a.add_event("TRIP-1", event_id="WB-IN", action="weigh", station="ST-A",
+            local_seq=1, lo=950, hi=1050, ticket="IN")     # 磅单事件绑票
+a.add_event("TRIP-1", event_id="ATT", action="attach", station="YARD",
+            local_seq=1, lo=940, hi=960, references="IN", trailer="R1")
+a.add_handoff("TRIP-1", "WB-IN", "ATT")
+
+rep = a.event_order("TRIP-1")          # 有环则抛 EvidenceCycle
+print(rep.topological, rep.forced_pairs, rep.bindings)
+a.add_handoff("TRIP-1", "ATT", "WB-IN") # 补入后重做：旧事件/旧边保留
+a.event_order_report("TRIP-1").cycle    # 证据环作为数据返回，不抛错
+```
+
+* 磅单事件按该运输的进出两票绑定（`ticket="IN"/"OUT"`）。
+* 挂车作业须 `references` 一张磅单（角色名或事件编号，可链式）并声明挂车；
+  给了 `EventArchive(product_resolver=...)`（可直接是 `Catalog.product_at`）
+  就 **沿被引用磅单的历史产品** 核对挂车身份，否则按票面声明核对。身份不符抛
+  `TrailerMismatch(declared, expected)`——即 **错绑的实体**。
+* `event_order_report` 总是返回报告，把环放进 `cycle`；`event_order` 有环即抛
+  `EvidenceCycle`。两者都绝不按录入顺序强行排序。
+* `rep.to_partial_order()` 把已校验的偏序交给许可回放。
+
+### 许可回放 `PermitScheme` + `PermitReplayEngine`
+
+按动作配置可重复使用的通行牌：每类牌有 `initial` 与 `capacity`；每个动作
+`take` 若干牌再 `emit` 若干牌。回放对所有 **遵守给定偏序的完整线性次序** 求：
+
+* `min_violations` / `max_violations` 及各自的完整 `min_witness` / `max_witness`
+  （事件次序 + 每步 `before`/`after` 余额）；
+* `always_violating`：每种合法次序下都违规的具体事件编号。
+
+一次动作若取回后余额不足、或执行后超出容量，记一次违规，**该动作走过但全部
+牌数保持原状**。方案与偏序解耦：改许可只需 `replay_permits(order, scheme)`；
+偏序不变也可换方案重算。
+
+```python
+from weighbridge import PartialOrder, PermitScheme, replay_permits
+
+po = PartialOrder([("W", "W"), ("D", "D")])   # 两站、无交接
+scheme = PermitScheme(
+    tokens=[{"name": "P", "initial": 0, "capacity": 1}],
+    rules=[{"action": "W", "emit": {"P": 1}},
+           {"action": "D", "take": {"P": 1}}],
+)
+r = replay_permits(po, scheme)
+print(r.min_violations, r.max_violations)     # 0 1（W→D 合规，D→W 违规）
+r = replay_permits(PartialOrder([("W","W"),("D","D")], [("D","W")]), scheme)
+print(r.min_violations, r.max_violations, r.always_violating)  # 1 1 ['D']
+# 只改许可（初始 1、容量 2），同一偏序两种次序都合规
+r = replay_permits(po, PermitScheme(
+    tokens=[{"name": "P", "initial": 1, "capacity": 2}],
+    rules=[{"action": "W", "emit": {"P": 1}},
+           {"action": "D", "take": {"P": 1}}]))
+print(r.min_violations, r.max_violations)     # 0 0
+```
+
+**搜索方式**：状态 = `(已执行事件的下闭集合, 余额向量)`。违规动作不改余额，
+故同一集合经不同路径可落到不同余额，余额必须并入状态才正确。状态上界
+`2^14 × ∏(capacity+1) ≤ 2^14 × 4^3`，只枚举满足偏序的集合；`min`/`max` 用逆向
+DP，`always_violating` 用 “该动作在任一可达状态能否干净执行” 判定。边界：每个
+运输至多 14 个事件、3 类牌、每类容量至多 3（超出即拒绝）。
+
+**“最少违规数 > 必然违规编号数”**：两个互无先后的取牌动作共争一张牌时，每个
+次序恰有一项违规（`min==max==1`），但没有任何固定事件必违规（`always_violating==[]`）。
+
 ## 文件
 
 ```
-weighbridge/catalog.py      独立车辆组合目录
-weighbridge/warehouse.py    过磅事实仓 + 精确整数求解
-weighbridge/__init__.py     公共 API
-tests/test_weighbridge.py   46 个测试（含小整数区间暴力核对极值）
-demo/run_demo.py            可复跑合成案例
-demo/out/                   演示输出（--json 时生成）
+weighbridge/catalog.py        独立车辆组合目录
+weighbridge/warehouse.py      过磅事实仓 + 精确整数求解
+weighbridge/partial_order.py  校验过的 DAG 偏序（两个入口共用）
+weighbridge/event_archive.py  入口一：站务事件档案与可复核偏序
+weighbridge/permit_replay.py  入口二：班组许可回放 (min/max/必然违规)
+weighbridge/__init__.py       公共 API
+tests/test_weighbridge.py     46 个测试（含小整数区间暴力核对极值）
+tests/test_ordering.py        29 个测试（含全线性扩展暴力核对 min/max）
+demo/run_demo.py              可复跑合成案例（原）
+demo/run_ordering.py          可复跑偏序 / 许可回放案例
+demo/out/                     演示输出（--json 时生成）
 ```
 
-## 覆盖的案例
+## 覆盖的案例 (偏序与许可)
 
-* 同车同挂精确抵消（含极宽空车区间）
-* 仅换挂：共享牵引车抵消、两挂车参与整数区间极值（与暴力枚举逐个核对）
-* 目录迟到更正：已确认运输不变，新增带前序身份的重评
-* 方向不可能、单票物理不可行、两票区间不相交
-* 同票竞争：已确认运输占票后另一运输确认失败，且失败不改变状态/不占票
-* 重开：多轮更正形成可追溯评估链
-* 外部快照独立运行、快照冲突拒绝、缺失历史产品拒绝
-* 批动作原子回滚、序号严格递增、单挂车/单牵引车约束、容量上限
+* 同站严格本地序号成链；跨站相接/重叠不证明先后；区间上端严格小于下端才成边；
+* 不同站、两事件区间均 `[8,9]`：W→D 违规 0、D→W 违规 1；
+* 固定许可补入 “D 先于 W” 交接 → 最少最多均 1、D 必然违规；
+* 保留原偏序、仅将许可改为初始 1/容量 2 → 两种次序都合规；
+* 两个互无先后的取牌动作共争一张牌 → 每次一项违规、无固定必违规事件；
+* 证据环：`event_order` 抛 `EvidenceCycle`、`event_order_report` 作为数据返回；
+* 错绑挂车：按票面声明核对，或用真实目录沿历史产品核对；
+* 全线性扩展暴力核对 `min`/`max`/`always_violating`（含 800 例随机交叉验证）。
+

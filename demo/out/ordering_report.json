@@ -1,0 +1,734 @@
+{
+  "archive": {
+    "trip_id": "TRIP-100",
+    "ok": true,
+    "cycle": null,
+    "events": [
+      {
+        "event_id": "WB-IN",
+        "action": "weigh",
+        "station": "ST-A",
+        "local_seq": 1,
+        "interval": [
+          950,
+          1050
+        ],
+        "kind": "weigh",
+        "ticket": "IN",
+        "references": null,
+        "trailer": null
+      },
+      {
+        "event_id": "WB-OUT",
+        "action": "weigh",
+        "station": "ST-B",
+        "local_seq": 1,
+        "interval": [
+          1380,
+          1420
+        ],
+        "kind": "weigh",
+        "ticket": "OUT",
+        "references": null,
+        "trailer": null
+      },
+      {
+        "event_id": "ATT-RA",
+        "action": "attach",
+        "station": "ST-YARD",
+        "local_seq": 1,
+        "interval": [
+          940,
+          960
+        ],
+        "kind": "trailer",
+        "ticket": null,
+        "references": "IN",
+        "trailer": "R-A"
+      },
+      {
+        "event_id": "DET-RB",
+        "action": "detach",
+        "station": "ST-YARD",
+        "local_seq": 2,
+        "interval": [
+          1450,
+          1500
+        ],
+        "kind": "trailer",
+        "ticket": null,
+        "references": "OUT",
+        "trailer": "R-B"
+      }
+    ],
+    "edges": {
+      "station": [
+        [
+          "ATT-RA",
+          "DET-RB"
+        ]
+      ],
+      "handoff": [
+        [
+          "WB-IN",
+          "ATT-RA"
+        ]
+      ],
+      "interval": [
+        [
+          "WB-IN",
+          "WB-OUT"
+        ],
+        [
+          "WB-IN",
+          "DET-RB"
+        ],
+        [
+          "WB-OUT",
+          "DET-RB"
+        ],
+        [
+          "ATT-RA",
+          "WB-OUT"
+        ],
+        [
+          "ATT-RA",
+          "DET-RB"
+        ]
+      ],
+      "union": [
+        [
+          "ATT-RA",
+          "DET-RB"
+        ],
+        [
+          "WB-IN",
+          "ATT-RA"
+        ],
+        [
+          "WB-IN",
+          "WB-OUT"
+        ],
+        [
+          "WB-IN",
+          "DET-RB"
+        ],
+        [
+          "WB-OUT",
+          "DET-RB"
+        ],
+        [
+          "ATT-RA",
+          "WB-OUT"
+        ]
+      ]
+    },
+    "topological": [
+      "WB-IN",
+      "ATT-RA",
+      "WB-OUT",
+      "DET-RB"
+    ],
+    "forced_pairs": [
+      [
+        "WB-IN",
+        "ATT-RA"
+      ],
+      [
+        "WB-IN",
+        "WB-OUT"
+      ],
+      [
+        "WB-IN",
+        "DET-RB"
+      ],
+      [
+        "ATT-RA",
+        "WB-OUT"
+      ],
+      [
+        "ATT-RA",
+        "DET-RB"
+      ],
+      [
+        "WB-OUT",
+        "DET-RB"
+      ]
+    ],
+    "bindings": {
+      "WB-IN": {
+        "kind": "weigh",
+        "ticket": "K-IN",
+        "role": "IN",
+        "tractor": "T-101",
+        "trailer": "R-A",
+        "trailer_from_history": "R-A"
+      },
+      "WB-OUT": {
+        "kind": "weigh",
+        "ticket": "K-OUT",
+        "role": "OUT",
+        "tractor": "T-101",
+        "trailer": "R-B",
+        "trailer_from_history": "R-B"
+      },
+      "ATT-RA": {
+        "kind": "trailer",
+        "ticket": "K-IN",
+        "role": "IN",
+        "tractor": "T-101",
+        "trailer": "R-A",
+        "via": [
+          "WB-IN",
+          "ATT-RA"
+        ]
+      },
+      "DET-RB": {
+        "kind": "trailer",
+        "ticket": "K-OUT",
+        "role": "OUT",
+        "tractor": "T-101",
+        "trailer": "R-B",
+        "via": [
+          "WB-OUT",
+          "DET-RB"
+        ]
+      }
+    }
+  },
+  "catalog_backed_mismatch": {
+    "mismatch": {
+      "event_id": "BAD",
+      "declared": "R-B",
+      "expected_from_history": "R-A"
+    }
+  },
+  "shared_order": {
+    "topological": [
+      "D",
+      "W"
+    ],
+    "forced_pairs": [],
+    "interval_edges": []
+  },
+  "free_permits": {
+    "min_violations": 0,
+    "max_violations": 1,
+    "always_violating": [],
+    "min_witness": {
+      "kind": "min",
+      "violations": 0,
+      "order": [
+        "W",
+        "D"
+      ],
+      "steps": [
+        {
+          "event_id": "W",
+          "action": "W",
+          "status": "ok",
+          "violation": false,
+          "before": {
+            "P": 0
+          },
+          "after": {
+            "P": 1
+          },
+          "reason": "took [none] then emitted [Px1] within bounds"
+        },
+        {
+          "event_id": "D",
+          "action": "D",
+          "status": "ok",
+          "violation": false,
+          "before": {
+            "P": 1
+          },
+          "after": {
+            "P": 0
+          },
+          "reason": "took [Px1] then emitted [none] within bounds"
+        }
+      ]
+    },
+    "max_witness": {
+      "kind": "max",
+      "violations": 1,
+      "order": [
+        "D",
+        "W"
+      ],
+      "steps": [
+        {
+          "event_id": "D",
+          "action": "D",
+          "status": "violation",
+          "violation": true,
+          "before": {
+            "P": 0
+          },
+          "after": {
+            "P": 0
+          },
+          "reason": "insufficient tokens to take"
+        },
+        {
+          "event_id": "W",
+          "action": "W",
+          "status": "ok",
+          "violation": false,
+          "before": {
+            "P": 0
+          },
+          "after": {
+            "P": 1
+          },
+          "reason": "took [none] then emitted [Px1] within bounds"
+        }
+      ]
+    },
+    "event_count": 2,
+    "ideal_count": 4,
+    "state_count": 5,
+    "tokens": [
+      {
+        "name": "P",
+        "initial": 0,
+        "capacity": 1
+      }
+    ],
+    "rules": [
+      {
+        "action": "W",
+        "take": {},
+        "emit": {
+          "P": 1
+        }
+      },
+      {
+        "action": "D",
+        "take": {
+          "P": 1
+        },
+        "emit": {}
+      }
+    ],
+    "order": {
+      "events": [
+        {
+          "event_id": "W",
+          "action": "W"
+        },
+        {
+          "event_id": "D",
+          "action": "D"
+        }
+      ],
+      "edges": [],
+      "topological": [
+        "D",
+        "W"
+      ]
+    }
+  },
+  "fixed_order": {
+    "topological": [
+      "D",
+      "W"
+    ],
+    "handoff_edges": [
+      [
+        "D",
+        "W"
+      ]
+    ]
+  },
+  "fixed_permits": {
+    "min_violations": 1,
+    "max_violations": 1,
+    "always_violating": [
+      "D"
+    ],
+    "min_witness": {
+      "kind": "min",
+      "violations": 1,
+      "order": [
+        "D",
+        "W"
+      ],
+      "steps": [
+        {
+          "event_id": "D",
+          "action": "D",
+          "status": "violation",
+          "violation": true,
+          "before": {
+            "P": 0
+          },
+          "after": {
+            "P": 0
+          },
+          "reason": "insufficient tokens to take"
+        },
+        {
+          "event_id": "W",
+          "action": "W",
+          "status": "ok",
+          "violation": false,
+          "before": {
+            "P": 0
+          },
+          "after": {
+            "P": 1
+          },
+          "reason": "took [none] then emitted [Px1] within bounds"
+        }
+      ]
+    },
+    "max_witness": {
+      "kind": "max",
+      "violations": 1,
+      "order": [
+        "D",
+        "W"
+      ],
+      "steps": [
+        {
+          "event_id": "D",
+          "action": "D",
+          "status": "violation",
+          "violation": true,
+          "before": {
+            "P": 0
+          },
+          "after": {
+            "P": 0
+          },
+          "reason": "insufficient tokens to take"
+        },
+        {
+          "event_id": "W",
+          "action": "W",
+          "status": "ok",
+          "violation": false,
+          "before": {
+            "P": 0
+          },
+          "after": {
+            "P": 1
+          },
+          "reason": "took [none] then emitted [Px1] within bounds"
+        }
+      ]
+    },
+    "event_count": 2,
+    "ideal_count": 3,
+    "state_count": 3,
+    "tokens": [
+      {
+        "name": "P",
+        "initial": 0,
+        "capacity": 1
+      }
+    ],
+    "rules": [
+      {
+        "action": "W",
+        "take": {},
+        "emit": {
+          "P": 1
+        }
+      },
+      {
+        "action": "D",
+        "take": {
+          "P": 1
+        },
+        "emit": {}
+      }
+    ],
+    "order": {
+      "events": [
+        {
+          "event_id": "W",
+          "action": "W"
+        },
+        {
+          "event_id": "D",
+          "action": "D"
+        }
+      ],
+      "edges": [
+        [
+          "D",
+          "W"
+        ]
+      ],
+      "topological": [
+        "D",
+        "W"
+      ]
+    }
+  },
+  "widened_permits": {
+    "min_violations": 0,
+    "max_violations": 0,
+    "always_violating": [],
+    "min_witness": {
+      "kind": "min",
+      "violations": 0,
+      "order": [
+        "D",
+        "W"
+      ],
+      "steps": [
+        {
+          "event_id": "D",
+          "action": "D",
+          "status": "ok",
+          "violation": false,
+          "before": {
+            "P": 1
+          },
+          "after": {
+            "P": 0
+          },
+          "reason": "took [Px1] then emitted [none] within bounds"
+        },
+        {
+          "event_id": "W",
+          "action": "W",
+          "status": "ok",
+          "violation": false,
+          "before": {
+            "P": 0
+          },
+          "after": {
+            "P": 1
+          },
+          "reason": "took [none] then emitted [Px1] within bounds"
+        }
+      ]
+    },
+    "max_witness": {
+      "kind": "max",
+      "violations": 0,
+      "order": [
+        "D",
+        "W"
+      ],
+      "steps": [
+        {
+          "event_id": "D",
+          "action": "D",
+          "status": "ok",
+          "violation": false,
+          "before": {
+            "P": 1
+          },
+          "after": {
+            "P": 0
+          },
+          "reason": "took [Px1] then emitted [none] within bounds"
+        },
+        {
+          "event_id": "W",
+          "action": "W",
+          "status": "ok",
+          "violation": false,
+          "before": {
+            "P": 0
+          },
+          "after": {
+            "P": 1
+          },
+          "reason": "took [none] then emitted [Px1] within bounds"
+        }
+      ]
+    },
+    "event_count": 2,
+    "ideal_count": 4,
+    "state_count": 4,
+    "tokens": [
+      {
+        "name": "P",
+        "initial": 1,
+        "capacity": 2
+      }
+    ],
+    "rules": [
+      {
+        "action": "W",
+        "take": {},
+        "emit": {
+          "P": 1
+        }
+      },
+      {
+        "action": "D",
+        "take": {
+          "P": 1
+        },
+        "emit": {}
+      }
+    ],
+    "order": {
+      "events": [
+        {
+          "event_id": "W",
+          "action": "W"
+        },
+        {
+          "event_id": "D",
+          "action": "D"
+        }
+      ],
+      "edges": [],
+      "topological": [
+        "D",
+        "W"
+      ]
+    }
+  },
+  "contest_permits": {
+    "min_violations": 1,
+    "max_violations": 1,
+    "always_violating": [],
+    "min_witness": {
+      "kind": "min",
+      "violations": 1,
+      "order": [
+        "T1",
+        "T2"
+      ],
+      "steps": [
+        {
+          "event_id": "T1",
+          "action": "TAKE",
+          "status": "ok",
+          "violation": false,
+          "before": {
+            "P": 1
+          },
+          "after": {
+            "P": 0
+          },
+          "reason": "took [Px1] then emitted [none] within bounds"
+        },
+        {
+          "event_id": "T2",
+          "action": "TAKE",
+          "status": "violation",
+          "violation": true,
+          "before": {
+            "P": 0
+          },
+          "after": {
+            "P": 0
+          },
+          "reason": "insufficient tokens to take"
+        }
+      ]
+    },
+    "max_witness": {
+      "kind": "max",
+      "violations": 1,
+      "order": [
+        "T1",
+        "T2"
+      ],
+      "steps": [
+        {
+          "event_id": "T1",
+          "action": "TAKE",
+          "status": "ok",
+          "violation": false,
+          "before": {
+            "P": 1
+          },
+          "after": {
+            "P": 0
+          },
+          "reason": "took [Px1] then emitted [none] within bounds"
+        },
+        {
+          "event_id": "T2",
+          "action": "TAKE",
+          "status": "violation",
+          "violation": true,
+          "before": {
+            "P": 0
+          },
+          "after": {
+            "P": 0
+          },
+          "reason": "insufficient tokens to take"
+        }
+      ]
+    },
+    "event_count": 2,
+    "ideal_count": 4,
+    "state_count": 4,
+    "tokens": [
+      {
+        "name": "P",
+        "initial": 1,
+        "capacity": 1
+      }
+    ],
+    "rules": [
+      {
+        "action": "TAKE",
+        "take": {
+          "P": 1
+        },
+        "emit": {}
+      }
+    ],
+    "order": {
+      "events": [
+        {
+          "event_id": "T1",
+          "action": "TAKE"
+        },
+        {
+          "event_id": "T2",
+          "action": "TAKE"
+        }
+      ],
+      "edges": [],
+      "topological": [
+        "T1",
+        "T2"
+      ]
+    }
+  },
+  "evidence_correction": {
+    "mismatch": {
+      "event_id": "OP",
+      "declared": "R-2",
+      "expected": "R-1"
+    },
+    "cycle_report_ok": false,
+    "cycle": [
+      "P",
+      "Q"
+    ],
+    "cycle_raised": [
+      "P",
+      "Q"
+    ],
+    "interval_edges": [
+      [
+        "P",
+        "Q"
+      ]
+    ],
+    "handoff_edges": [
+      [
+        "Q",
+        "P"
+      ]
+    ]
+  }
+}
